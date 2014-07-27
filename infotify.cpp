@@ -58,10 +58,10 @@ int main(int argc, TCHAR *argv[])
             ThreadParameter ParameterToThread={Directory,Notification,sizeof(notify),&BytesReturned,&version,TempNotification};
 
             //创建一个线程专门用于监控文件变化
-            HANDLE TrheadWatch=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)WatchChanges,&ParameterToThread,0,NULL);
-            WaitForSingleObject(TrheadWatch, INFINITE);
-            CloseHandle(TrheadWatch);
-            //WatchChanges(&ParameterToThread);
+           // HANDLE TrheadWatch=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)WatchChanges,&ParameterToThread,0,NULL);
+           // WaitForSingleObject(TrheadWatch, INFINITE);
+           // CloseHandle(TrheadWatch);
+            WatchChanges(&ParameterToThread);
 
 }
 
@@ -239,6 +239,7 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 		time(&ChangeTime);//记录修改时间
 
 
+
 		if (GetLastError()==ERROR_INVALID_FUNCTION)
 		{
 			MessageBox(NULL,TEXT("系统不支持!"),TEXT("文件监控"),0);
@@ -256,6 +257,7 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 		}
 		else
 		{
+			cout<<parameter->in_out_notification->NextEntryOffset<<"\n"<<flush;
 
 			//将宽字符类型的FileName变量转换成string，便于写入log文件，否则写不进去正确的文件名
 			string file_name;
@@ -283,17 +285,22 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 			}
 			if (parameter->in_out_notification->Action==FILE_ACTION_MODIFIED)
 			{
+				/*
 				edit_flag++;
 				if(edit_flag==1){
 					WriteLog<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
 					cout<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
 				}else if(edit_flag==2)
 				{
+
 					edit_flag=0;
 					(*(parameter->in_out_version))--;
 				}
 				else
 					return -1;//break;
+					*/
+				WriteLog<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
+				cout<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
 			}
 
 
@@ -308,12 +315,17 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 				WriteLog<<ctime(&ChangeTime)<<"重命名\""<<file_name<<"\"文件为\""<<parameter->in_out_notification->Action<<"\"\n"<<flush;
 				cout<<ctime(&ChangeTime)<<"重命名\""<<file_name<<"\"文件为\""<<parameter->in_out_notification->Action<<"\"\n"<<flush;
 			}
+			/*
 			(*(parameter->in_out_version))++;
 			memset(parameter->in_out_notification,'\0',1024);
+			*/
+
 
 		}
+
+
 		//fflush(stdout);
-		Sleep(500);
+		//Sleep(500);
 	}
 	return 0;
 }
