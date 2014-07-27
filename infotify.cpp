@@ -2,19 +2,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <tchar.h>
-#include	<iostream>
-#include<ctime>
-#include	<wchar.h>
+#include <iostream>
+#include <ctime>
+#include <wchar.h>
 #include <sstream>
 #include <time.h>
-#include<fstream>
+#include <fstream>
+#include <process.h>
 
 using namespace std;
 
 void RefreshDirectory(LPTSTR);
 void RefreshTree(LPTSTR);
 void WatchDirectory(LPTSTR);
-DWORD WINAPI WatchChanges(LPVOID lpParameter);
+unsigned __stdcall WatchChanges(LPVOID lpParameter);
 
 
 //ThreadParameter结构体的定义
@@ -30,7 +31,6 @@ typedef struct ThreadParameter
 	FILE_NOTIFY_INFORMATION *in_out_notification;//存储监控函数返回信息地址
 	DWORD in_MemorySize;//传递存储返回信息的内存的字节数
 	DWORD *in_out_BytesReturned;//存储监控函数返回信息的字节数
-	DWORD *in_out_version;//返回版本信息
 	FILE_NOTIFY_INFORMATION *temp_notification;//备用的一个参数
 }ThreadParameter;
 
@@ -50,15 +50,15 @@ int main(int argc, TCHAR *argv[])
             FILE_NOTIFY_INFORMATION *Notification=(FILE_NOTIFY_INFORMATION *)notify;
             FILE_NOTIFY_INFORMATION *TempNotification=NULL;
             DWORD BytesReturned=0;
-            DWORD version=0;
+
 
 
 
             //整合传给子线程的参数，该结构体的定义参考上面的定义
-            ThreadParameter ParameterToThread={Directory,Notification,sizeof(notify),&BytesReturned,&version,TempNotification};
+            ThreadParameter ParameterToThread={Directory,Notification,sizeof(notify),&BytesReturned,TempNotification};
 
             //创建一个线程专门用于监控文件变化
-            HANDLE TrheadWatch=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)WatchChanges,&ParameterToThread,0,NULL);
+            HANDLE TrheadWatch=(HANDLE)_beginthreadex(NULL,0,&WatchChanges,&ParameterToThread,0,NULL);
             WaitForSingleObject(TrheadWatch, INFINITE);
             CloseHandle(TrheadWatch);
            // WatchChanges(&ParameterToThread);
@@ -197,9 +197,9 @@ void RefreshTree(LPTSTR lpDrive)
 //
 //  注释:主函数创建线程时制定了这个函数的入口
 //		 届时该子程序将自动启动执行。
-//  备注：因为代码不全，看下面的代码时，主要参考红色的字体部分
 
-DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
+
+unsigned   __stdcall WatchChanges(LPVOID lpParameter)//返回版本信息
 {
 	ThreadParameter *parameter=(ThreadParameter*)lpParameter;
 	LPCTSTR WatchDirectory=parameter->in_directory;//
@@ -222,7 +222,6 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 
 	BOOL watch_state;
 	time_t ChangeTime;
-	int edit_flag = 0;
 	ofstream WriteLog("log.txt",ios::app);
 
 	while (TRUE)
@@ -257,7 +256,6 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 		}
 		else
 		{
-			cout<<parameter->in_out_notification->NextEntryOffset<<"\n"<<flush;
 
 			//将宽字符类型的FileName变量转换成string，便于写入log文件，否则写不进去正确的文件名
 			string file_name;
@@ -317,9 +315,8 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 			}
 			/*
 			(*(parameter->in_out_version))++;
-			memset(parameter->in_out_notification,'\0',1024);
 			*/
-
+			memset(parameter->in_out_notification,'\0',1024);
 
 		}
 
@@ -327,5 +324,6 @@ DWORD WINAPI WatchChanges(LPVOID lpParameter)//返回版本信息
 		//fflush(stdout);
 		//Sleep(500);
 	}
+	_endthreadex(0);
 	return 0;
 }
