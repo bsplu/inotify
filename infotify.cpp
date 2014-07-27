@@ -58,10 +58,10 @@ int main(int argc, TCHAR *argv[])
             ThreadParameter ParameterToThread={Directory,Notification,sizeof(notify),&BytesReturned,&version,TempNotification};
 
             //创建一个线程专门用于监控文件变化
-           // HANDLE TrheadWatch=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)WatchChanges,&ParameterToThread,0,NULL);
-           // WaitForSingleObject(TrheadWatch, INFINITE);
-           // CloseHandle(TrheadWatch);
-            WatchChanges(&ParameterToThread);
+            HANDLE TrheadWatch=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)WatchChanges,&ParameterToThread,0,NULL);
+            WaitForSingleObject(TrheadWatch, INFINITE);
+            CloseHandle(TrheadWatch);
+           // WatchChanges(&ParameterToThread);
 
 }
 
