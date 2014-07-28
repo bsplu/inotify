@@ -14,6 +14,7 @@
 using namespace std;
 
 
+
 DWORD WINAPI ThreadProc(LPVOID lpParam)
 {
 	LPCTSTR pDirtory = (char*)lpParam;
@@ -55,6 +56,9 @@ DWORD WINAPI ThreadProc(LPVOID lpParam)
 
         if ( bRet == TRUE )
         {
+        	time_t ChangeTime;
+        	time(&ChangeTime);
+
             char szFileName[MAX_PATH] = { 0 };
 
             // 宽字符转换多字节
@@ -72,14 +76,16 @@ DWORD WINAPI ThreadProc(LPVOID lpParam)
                 // 添加
             case FILE_ACTION_ADDED:
                 {
-                    printf("添加 : %s\r\n", szFileName);
+                    //printf("添加 : %s\r\n", szFileName);
+                    cout<<ctime(&ChangeTime)<<"添加:"<<szFileName<<"\n"<<flush;
 
                     break;
                 }
                 // 删除
             case FILE_ACTION_REMOVED:
                 {
-                    printf("删除 : %s\r\n", szFileName);
+                    //printf("删除 : %s\r\n", szFileName);
+                    cout<<ctime(&ChangeTime)<<"删除:"<<szFileName<<"\n"<<flush;
 
                     break;
                 }
@@ -89,16 +95,23 @@ DWORD WINAPI ThreadProc(LPVOID lpParam)
                 	//修改为文件夹
                 	_finddata_t file;
                 	string sdirfile;
-                	sdirfile = string(pDirtory)+"\\"+szFileName;
+                	sdirfile = string(pDirtory);
+                	if(sdirfile.find_last_of("\\") != sdirfile.length()){
+                		sdirfile = string(pDirtory)+"\\"+szFileName;
+                	}else{
+                		sdirfile = string(pDirtory)+szFileName;
+                	}
                 	long lf;
                 	if((lf = _findfirst(sdirfile.c_str(), &file))== -1l){
-                		cout<<"目录不存在:"<<sdirfile<<flush;
+                		cout<<"目录不存在:"<<sdirfile<<"\n"<<flush;
 
                 		return 1;
                 	}
+
                 	if((file.attrib & _A_SUBDIR) == 0){
 
-                		printf("修改 : %s\r\n", szFileName);
+                		//printf("修改 : %s\r\n", szFileName);
+                		cout<<ctime(&ChangeTime)<<"修改:"<<szFileName<<"\n"<<flush;
                 	}
 
                     break;
@@ -106,7 +119,8 @@ DWORD WINAPI ThreadProc(LPVOID lpParam)
                 // 重命名
             case FILE_ACTION_RENAMED_OLD_NAME:
                 {
-                    printf("重命名 : %s", szFileName);
+                    //printf("重命名 : %s", szFileName);
+                    cout<<ctime(&ChangeTime)<<"重命名:"<<szFileName;
                     if ( pBuffer->NextEntryOffset != 0 )
                     {
                         FILE_NOTIFY_INFORMATION *tmpBuffer = (FILE_NOTIFY_INFORMATION *)((DWORD)pBuffer + pBuffer->NextEntryOffset);
@@ -123,7 +137,8 @@ DWORD WINAPI ThreadProc(LPVOID lpParam)
                                     MAX_PATH,
                                     NULL,
                                     NULL);
-                                printf(" ->  : %s \r\n", szFileName);
+                                //printf(" ->  : %s \r\n", szFileName);
+                                cout<<"->"<<szFileName<<"\n"<<flush;
                                 break;
                             }
                         }
@@ -132,7 +147,8 @@ DWORD WINAPI ThreadProc(LPVOID lpParam)
                 }
             case FILE_ACTION_RENAMED_NEW_NAME:
                 {
-                    printf("重命名(new) : %s\r\n", szFileName);
+                    //printf("重命名(new) : %s\r\n", szFileName);
+                    cout<<ctime(&ChangeTime)<<"重命名(new):"<<szFileName<<"\n"<<flush;
                 }
             }
         }
