@@ -227,13 +227,13 @@ unsigned   __stdcall WatchChanges(LPVOID lpParameter)//返回版本信息
 	while (TRUE)
 	{
 		watch_state=ReadDirectoryChangesW(handle_directory,
-			(LPVOID)parameter->in_out_notification,
-			parameter->in_MemorySize,
-			TRUE,
-			FILE_NOTIFY_CHANGE_FILE_NAME|FILE_NOTIFY_CHANGE_DIR_NAME|FILE_NOTIFY_CHANGE_LAST_WRITE,
-			(LPDWORD)parameter->in_out_BytesReturned,
-			NULL,
-			NULL);
+		            (LPVOID)parameter->in_out_notification,
+		            parameter->in_MemorySize,
+		            TRUE,
+		            FILE_NOTIFY_CHANGE_FILE_NAME|FILE_NOTIFY_CHANGE_DIR_NAME|FILE_NOTIFY_CHANGE_LAST_WRITE,
+		            (LPDWORD)parameter->in_out_BytesReturned,
+		            NULL,
+		            NULL);
 
 		time(&ChangeTime);//记录修改时间
 
@@ -256,67 +256,31 @@ unsigned   __stdcall WatchChanges(LPVOID lpParameter)//返回版本信息
 		}
 		else
 		{
-
-			//将宽字符类型的FileName变量转换成string，便于写入log文件，否则写不进去正确的文件名
-			string file_name;
-			DWORD length=WideCharToMultiByte(0,0,parameter->in_out_notification->FileName,-1,NULL,0,NULL,NULL);
-			PSTR ps=new CHAR[length];
-			if(length>=0)
-			{
-				WideCharToMultiByte(0,0,parameter->in_out_notification->FileName,-1,ps,length,NULL,NULL);
-				file_name=string(ps);
-				delete[] ps;
-			}
-
-			//这里主要就是检测返回的信息，需要注意FILE_NOTIFY_INFORMATION结构体的定义，以便正确调用返回信息
-
-			if (parameter->in_out_notification->Action==FILE_ACTION_ADDED)
-			{
-				WriteLog<<ctime(&ChangeTime)<<"新增文件 : "<<file_name<<"\n"<<flush;
-				cout<<ctime(&ChangeTime)<<"新增文件 : "<<file_name<<"\n"<<flush;
-
-			}
-			if (parameter->in_out_notification->Action==FILE_ACTION_REMOVED)
-			{
-				WriteLog<<ctime(&ChangeTime)<<"删除文件 : "<<file_name<<"\n"<<flush;
-				cout<<ctime(&ChangeTime)<<"删除文件 : "<<file_name<<"\n"<<flush;
-			}
-			if (parameter->in_out_notification->Action==FILE_ACTION_MODIFIED)
-			{
-				/*
-				edit_flag++;
-				if(edit_flag==1){
-					WriteLog<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
-					cout<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
-				}else if(edit_flag==2)
-				{
-
-					edit_flag=0;
-					(*(parameter->in_out_version))--;
-				}
-				else
-					return -1;//break;
-					*/
-				WriteLog<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
-				cout<<ctime(&ChangeTime)<<"修改文件 : "<<file_name<<"\n"<<flush;
-			}
-
-
-			//对于下面两种情况，Action本身也是文件名（可能是old_name也可能是new_name）
-			if (parameter->in_out_notification->Action==FILE_ACTION_RENAMED_OLD_NAME)
-			{
-				WriteLog<<ctime(&ChangeTime)<<"重命名\""<<file_name<<"\"文件\n"<<flush;
-				cout<<ctime(&ChangeTime)<<"重命名\""<<file_name<<"\"文件\n"<<flush;
-			}
-			if (parameter->in_out_notification->Action==FILE_ACTION_RENAMED_NEW_NAME)
-			{
-				WriteLog<<ctime(&ChangeTime)<<"重命名\""<<file_name<<"\"文件为\""<<parameter->in_out_notification->Action<<"\"\n"<<flush;
-				cout<<ctime(&ChangeTime)<<"重命名\""<<file_name<<"\"文件为\""<<parameter->in_out_notification->Action<<"\"\n"<<flush;
-			}
-			/*
-			(*(parameter->in_out_version))++;
-			*/
-			memset(parameter->in_out_notification,'\0',1024);
+			char str1[MAX_PATH];
+			memset(str1, 0, MAX_PATH);
+			WideCharToMultiByte( CP_ACP,0,parameter->in_out_notification->FileName,
+					parameter->in_out_notification->FileNameLength/2,
+					str1,99,NULL,NULL );
+            switch(parameter->in_out_notification->Action)
+            {
+            case FILE_ACTION_ADDED:
+                printf("New Folder: %s\n", str1);
+                break;
+            case FILE_ACTION_MODIFIED:
+                printf("The file was modified. This can be a change in the time stamp or attributes.\n");
+                break;
+            case FILE_ACTION_REMOVED:
+                printf("The file was removed from the directory.\n");
+                break;
+            case FILE_ACTION_RENAMED_NEW_NAME:
+                printf("The file was renamed and this is the new name:%s\n", str1);
+                break;
+            case FILE_ACTION_RENAMED_OLD_NAME:
+                printf("The file was renamed and this is the old name:%s\n", str1);
+                break;
+            default:
+                printf("Unknown command.\n");
+            }
 
 		}
 
